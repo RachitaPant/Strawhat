@@ -1,18 +1,148 @@
-import {View, Text, StyleSheet, TouchableOpacity, Image} from 'react-native';
-import React, {useEffect} from 'react';
-import profile from '../assets/images/profile.png';
-import homeimage from '../assets/images/homeimage.jpg';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  TextInput,
+  ActivityIndicator,
+  FlatList,
+  ScrollView,
+} from 'react-native';
+import React, {useEffect, useState} from 'react';
+
 import SplashScreen from 'react-native-splash-screen';
 
+import BackgroundService from 'react-native-background-actions';
+import profile from '../assets/images/profile.png';
+import homeimage from '../assets/images/homeimage.jpg';
+import LinearGradient from 'react-native-linear-gradient';
+
+const options = {
+  taskName: 'Example',
+  taskTitle: 'ExampleTask title',
+  taskDesc: 'ExampleTask description',
+  taskIcon: {
+    name: 'ic_launcher',
+    type: 'mipmap',
+  },
+  color: '#ff00ff',
+  linkingURI: 'yourSchemeHere://chat/jane', // See Deep Linking for more info
+  parameters: {
+    delay: 1000,
+  },
+};
+
 const Home = ({navigation}) => {
+  const [search, setSearch] = useState();
+  const [animeData, setAnimeData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [expanded, setExpanded] = useState({});
+
   useEffect(() => {
+    async function startBackgroundService() {
+      try {
+        await BackgroundService.start(getData, options);
+        await BackgroundService.updateNotification({
+          taskDesc: 'New ExampleTask description',
+        });
+        // iOS will run everything here in the background until .stop() is called
+        await BackgroundService.stop();
+      } catch (error) {
+        console.error('Failed to start background service:', error);
+      }
+    }
+    startBackgroundService();
+
+    // Hide splash screen after 2 seconds
     setTimeout(() => {
-      SplashScreen.hide(); // Hides the splash screen
+      SplashScreen.hide();
     }, 2000);
-  }, []);
+    return () => {
+      // Clean up background service if necessary
+      BackgroundService.stop();
+    };
+  }, [search]);
+  const getData = async () => {
+    if (BackgroundService.isRunning) {
+      console.log('Background task started');
+      try {
+        const response = await fetch(
+          'https://api.jikan.moe/v4/anime?q=${search}&limit=20',
+        );
+        if (!response.ok) {
+          throw new Error('Failed to fetch data');
+        }
+        const data = await response.json();
+        setAnimeData(data.data);
+        console.log(data);
+        setIsLoading(false);
+        return data;
+      } catch (error) {
+        console.error('Background task error:', error);
+        throw error; // Ensure the error is propagated back
+      }
+    }
+  };
+
+  const toggleExpand = index => {
+    setExpanded(prevExpanded => ({
+      ...prevExpanded,
+      [index]: !prevExpanded[index],
+    }));
+  };
+
+  const renderContent = () => {
+    if (isLoading) {
+      return <ActivityIndicator size="large" color="#fff" />;
+    }
+    if (error) {
+      return <Text>{error}</Text>;
+    }
+    if (animeData) {
+      return (
+        <View style={styles.animeContainer}>
+          <Text style={styles.text}>Trending Anime</Text>
+          <ScrollView horizontal>
+            <View style={styles.anime}>
+              {animeData.map((anime, index) => (
+                <LinearGradient
+                  key={index}
+                  colors={['red', 'yellow']}
+                  style={[
+                    styles.animeBlock,
+                    expanded[index] ? {height: 350} : {height: 300},
+                  ]}>
+                  <Image
+                    source={{uri: anime.images.jpg.large_image_url}}
+                    style={styles.animeImage}
+                  />
+                  <Text style={styles.animeTitle}>{anime.title}</Text>
+                  <Text style={styles.animeDescription}>
+                    {expanded[index] || anime.synopsis.length <= 20
+                      ? anime.synopsis
+                      : `${anime.synopsis.substring(0, 20)}...`}
+                  </Text>
+                  {anime.synopsis.length > 20 && (
+                    <TouchableOpacity onPress={() => toggleExpand(index)}>
+                      <Text style={styles.showMore}>
+                        {expanded[index] ? 'Show Less' : 'Show More'}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </LinearGradient>
+              ))}
+            </View>
+          </ScrollView>
+        </View>
+      );
+    }
+    return null;
+  };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.text}>Strawhat</Text>
         <TouchableOpacity
@@ -25,17 +155,17 @@ const Home = ({navigation}) => {
       </View>
       <View style={styles.middle}>
         <Text style={styles.textmiddle}>Welcome Friend !</Text>
+        <View style={styles.searchContainer}>
+          <TextInput
+            cursorColor={'red'}
+            inputMode="search"
+            placeholder="Search your fav anime"
+            onChange={e => setSearch(e.target.value)}></TextInput>
+        </View>
         <Image source={homeimage} style={styles.homeimage}></Image>
       </View>
-      <View>
-        <Text style={styles.text}>Trending Anime </Text>
-        <View style={styles.anime}>
-          <View style={styles.animeBlock}></View>
-          <View style={styles.animeBlock}></View>
-          <View style={styles.animeBlock}></View>
-        </View>
-      </View>
-    </View>
+      {renderContent()}
+    </ScrollView>
   );
 };
 
@@ -68,6 +198,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     width: '100%',
   },
+  searchContainer: {
+    height: 40,
+    width: '100%',
+    borderColor: 'red',
+    borderWidth: 1,
+    marginBottom: 10,
+    justifyContent: 'center',
+  },
   middle: {
     backgroundColor: '#000',
     height: '40%',
@@ -85,13 +223,44 @@ const styles = StyleSheet.create({
     margin: 10,
     borderRadius: 120,
   },
+  animeContainer: {
+    flex: 1,
+    backgroundColor: 'green',
+    marginBottom: 150,
+  },
   anime: {
     flexDirection: 'row',
   },
   animeBlock: {
-    height: 120,
-    backgroundColor: 'red',
-    width: 100,
+    backgroundColor: 'linear(red,yellow)',
+    width: 200,
     margin: 20,
+    alignItems: 'center',
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  animeImage: {
+    height: 100,
+    width: 100,
+    marginTop: 5,
+    alignSelf: 'center',
+    borderRadius: 5,
+  },
+  animeImageBlock: {},
+  animeDescription: {
+    color: '#fff',
+    textAlign: 'center',
+    marginTop: 5,
+    paddingHorizontal: 10,
+  },
+  animeTitle: {
+    color: '#fff',
+    textAlign: 'center',
+    marginTop: 5,
+  },
+  showMore: {
+    color: 'blue',
+    marginTop: 5,
+    textDecorationLine: 'underline',
   },
 });
