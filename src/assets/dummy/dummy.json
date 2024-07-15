@@ -1,0 +1,30 @@
+[
+  {
+    "id": 1,
+    "text": "First dummy post",
+    "photo": "https://via.placeholder.com/300",
+    "username": "Ajay",
+    "profilePic": "https://via.placeholder.com/300"
+  },
+  {
+    "id": 2,
+    "text": "Second dummy post with an image",
+    "photo": "https://via.placeholder.com/300",
+    "username": "Ajay",
+    "profilePic": "https://via.placeholder.com/300"
+  },
+  {
+    "id": 3,
+    "text": "Second dummy post with an image",
+    "photo": "https://via.placeholder.com/300",
+    "username": "Ajay",
+    "profilePic": "https://via.placeholder.com/300"
+  },
+  {
+    "id": 4,
+    "text": "Third dummy post without an image",
+    "photo": null,
+    "username": "Ajay",
+    "profilePic": "https://via.placeholder.com/300"
+  }
+]

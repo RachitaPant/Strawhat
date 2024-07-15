@@ -33,7 +33,7 @@ const options = {
   },
 };
 
-const Home = ({navigation}) => {
+const HomeScreen = ({navigation}) => {
   const [search, setSearch] = useState();
   const [animeData, setAnimeData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -55,10 +55,10 @@ const Home = ({navigation}) => {
     }
     startBackgroundService();
 
-    // Hide splash screen after 2 seconds
+    // Hide splash screen after 3 seconds
     setTimeout(() => {
       SplashScreen.hide();
-    }, 2000);
+    }, 3000);
     return () => {
       // Clean up background service if necessary
       BackgroundService.stop();
@@ -109,7 +109,7 @@ const Home = ({navigation}) => {
               {animeData.map((anime, index) => (
                 <LinearGradient
                   key={index}
-                  colors={['red', 'yellow']}
+                  colors={['#2e32a3', '#bb94d4', '#d494ca']}
                   style={[
                     styles.animeBlock,
                     expanded[index] ? {height: 350} : {height: 300},
@@ -122,7 +122,7 @@ const Home = ({navigation}) => {
                   <Text style={styles.animeDescription}>
                     {expanded[index] || anime.synopsis.length <= 20
                       ? anime.synopsis
-                      : `${anime.synopsis.substring(0, 20)}...`}
+                      : `${anime.synopsis.substring(0, 80)}...`}
                   </Text>
                   {anime.synopsis.length > 20 && (
                     <TouchableOpacity onPress={() => toggleExpand(index)}>
@@ -169,7 +169,7 @@ const Home = ({navigation}) => {
   );
 };
 
-export default Home;
+export default HomeScreen;
 const styles = StyleSheet.create({
   text: {
     color: '#fff',
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
   searchContainer: {
     height: 40,
     width: '100%',
-    borderColor: 'red',
+    borderColor: '#a28be8',
     borderWidth: 1,
     marginBottom: 10,
     justifyContent: 'center',
@@ -225,14 +225,13 @@ const styles = StyleSheet.create({
   },
   animeContainer: {
     flex: 1,
-    backgroundColor: 'green',
+    backgroundColor: 'black',
     marginBottom: 150,
   },
   anime: {
     flexDirection: 'row',
   },
   animeBlock: {
-    backgroundColor: 'linear(red,yellow)',
     width: 200,
     margin: 20,
     alignItems: 'center',
@@ -240,8 +239,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   animeImage: {
-    height: 100,
-    width: 100,
+    height: 150,
+    width: 190,
     marginTop: 5,
     alignSelf: 'center',
     borderRadius: 5,
@@ -259,7 +258,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   showMore: {
-    color: 'blue',
+    color: 'white',
     marginTop: 5,
     textDecorationLine: 'underline',
   },
