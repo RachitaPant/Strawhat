@@ -6,67 +6,237 @@ import {
   StyleSheet,
   Image,
   ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  FlatList,
+  ImageBackground,
 } from 'react-native';
+import camera from '../assets/images/camera.png';
+import firestore from '@react-native-firebase/firestore';
+import storage from '@react-native-firebase/storage';
+import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
+import auth from '@react-native-firebase/auth';
 
 const Community = () => {
+  //constants
   const [postText, setPostText] = useState('');
   const [posts, setPosts] = useState([]);
+  const [text, setText] = useState('');
+  const [imageUri, setImageUri] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [transferred, setTransferred] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  // Example function to fetch posts (replace with your actual data fetching logic)
-  const fetchPosts = async () => {
+  //Gallery action
+  const openGallery = async () => {
+    const options = {
+      mediaType: 'photo',
+      includeBase64: false,
+      maxHeight: 2000,
+      maxWidth: 2000,
+    };
+
     try {
-      // Assuming 'dummy.json' is located in the 'assets/dummy' directory
-      const data = require('../assets/dummy/dummy.json');
-      setPosts(data); // Update state with fetched posts
+      const response = await launchImageLibrary(options);
+
+      if (response.didCancel) {
+        console.log('User cancelled image picker');
+      } else if (response.errorCode) {
+        console.log('Image picker error: ', response.errorCode);
+      } else {
+        let imageUri = response.assets?.[0]?.uri;
+        setImageUri(imageUri);
+        console.log('Image URI: ', imageUri);
+      }
     } catch (error) {
-      console.error('Error fetching posts:', error);
+      console.log('Error launching image library: ', error);
+    }
+  };
+  //Showing existing posts
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const postsSnapshot = await firestore()
+          .collection('posts')
+          .orderBy('createdAt', 'desc')
+          .get();
+
+        const postsData = [];
+        for (const doc of postsSnapshot.docs) {
+          const postData = doc.data();
+          const userSnapshot = await firestore()
+            .collection('users')
+            .doc(postData.userId)
+            .get();
+          const userData = userSnapshot.data();
+          postsData.push({
+            id: doc.id,
+            ...postData,
+            username: userData.username,
+          });
+        }
+
+        setPosts(postsData);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching posts:', error);
+        setLoading(false);
+      }
+    };
+
+    const unsubscribe = firestore()
+      .collection('posts')
+      .orderBy('createdAt', 'desc')
+      .onSnapshot(snapshot => {
+        // Handle real-time updates for new, modified, and removed posts
+        snapshot.docChanges().forEach(change => {
+          const post = {
+            id: change.doc.id,
+            ...change.doc.data(),
+          };
+
+          switch (change.type) {
+            case 'added':
+              setPosts(prevPosts => [post, ...prevPosts]); // Add new post
+              break;
+            case 'modified':
+              // Handle modified post if needed
+              break;
+            case 'removed':
+              setPosts(prevPosts => prevPosts.filter(p => p.id !== post.id)); // Remove post from state
+              break;
+            default:
+              break;
+          }
+        });
+      });
+
+    fetchPosts();
+    return () => unsubscribe();
+  }, []);
+  //Getting new posts
+  const uploadImage = async () => {
+    if (imageUri == null) {
+      return null;
+    }
+    const uploadUri = imageUri;
+    let filename = uploadUri.substring(uploadUri.lastIndexOf('/') + 1);
+
+    // Add timestamp to file name
+    const extension = filename.split('.').pop();
+    const name = filename.split('.').slice(0, -1).join('.');
+    filename = name + Date.now() + '.' + extension;
+
+    setUploading(true);
+    setTransferred(0);
+
+    const task = storage().ref(filename).putFile(uploadUri);
+    task.on('state_changed', snapshot => {
+      setTransferred(
+        Math.round(snapshot.bytesTransferred / snapshot.totalBytes) * 100,
+      );
+    });
+
+    try {
+      await task;
+
+      const url = await storage().ref(filename).getDownloadURL();
+
+      setUploading(false);
+      setImageUri(null);
+
+      return url;
+    } catch (e) {
+      console.error(e);
+      setUploading(false);
+      return null;
     }
   };
 
-  useEffect(() => {
-    // Fetch posts when component mounts
-    fetchPosts();
-  }, []);
+  const submitPost = async () => {
+    const imageUrl = await uploadImage();
+    if (!text && !imageUrl) {
+      return; // Prevent submitting empty posts
+    }
+    const currentUser = auth().currentUser;
+    if (!currentUser) {
+      console.error('No user authenticated.');
+      return;
+    }
 
-  const handlePost = () => {
-    // Example function to handle posting (replace with your actual posting logic)
-    console.log('Posted:', postText);
-    // Here you can add logic to send the post data to your backend/database
-    // and update the UI accordingly
+    const newPost = {
+      text,
+      imageUrl,
+      createdAt: firestore.FieldValue.serverTimestamp(),
+      userId: currentUser.uid,
+      // Assuming displayName is available after authentication
+      username: currentUser.displayName || 'Anonymous', // Use 'Anonymous' if displayName is not set
+    };
+
+    try {
+      await firestore().collection('posts').add(newPost);
+      setText('');
+      setImageUri(null);
+      console.log('Post added successfully!');
+    } catch (error) {
+      console.error('Error adding post: ', error);
+    }
   };
-
+  if (loading) {
+    return <ActivityIndicator size="large" color="#0000ff" />;
+  }
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.postInputContainer}>
-        <TextInput
-          style={styles.postInput}
-          placeholder="Post Here"
-          onChangeText={text => setPostText(text)}
-          value={postText}
-          multiline
-        />
-        <Text style={styles.postButton} onPress={handlePost}>
-          Post
-        </Text>
-      </View>
-
-      <View style={styles.postsContainer}>
-        {posts.map((post, index) => (
-          <View key={index} style={styles.post}>
-            <View>
-              <Image
-                source={{uri: post.profilePic}}
-                style={styles.profileImage}></Image>
-              <Text>{post.username}</Text>
-            </View>
-
-            <Text>{post.text}</Text>
-            {post.photo && (
-              <Image source={{uri: post.photo}} style={styles.postImage} />
-            )}
+      <ImageBackground
+        source={require('../assets/images/profileBg.png')}
+        style={styles.backgroundImage}
+        resizeMode="cover">
+        <View style={styles.postContainer}>
+          {imageUri && <Image source={{uri: imageUri}} style={styles.image} />}
+          <View style={styles.postInputContainer}>
+            <TextInput
+              style={styles.postInput}
+              placeholder="Post Here"
+              onChangeText={text => setText(text)}
+              value={text}
+              multiline
+            />
+            <TouchableOpacity
+              onPress={() => {
+                openGallery();
+              }}>
+              <Image source={camera} style={styles.cameraStyles}></Image>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                submitPost();
+              }}>
+              <Text style={styles.postButton} o>
+                Post
+              </Text>
+            </TouchableOpacity>
           </View>
-        ))}
-      </View>
+        </View>
+
+        <View style={styles.postsContainer}>
+          <FlatList
+            data={posts}
+            keyExtractor={item => item.id}
+            renderItem={({item}) => (
+              <View style={styles.postContainer}>
+                <Text style={styles.userName}>{item.username}</Text>
+                <Text style={styles.postText}>{item.text}</Text>
+                {item.imageUrl ? (
+                  <Image
+                    source={{uri: item.imageUrl}}
+                    style={styles.postImage}
+                  />
+                ) : null}
+              </View>
+            )}
+          />
+        </View>
+      </ImageBackground>
     </ScrollView>
   );
 };
@@ -74,25 +244,34 @@ const Community = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'black',
-    paddingHorizontal: 20,
-    paddingTop: 40,
   },
+  backgroundImage: {
+    flex: 1,
+    resizeMode: 'cover',
+    justifyContent: 'center',
+  },
+
   postInputContainer: {
     flexDirection: 'row',
     padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: 'gray',
   },
   postInput: {
     flex: 1,
     color: 'white',
     fontSize: 16,
   },
+  postContainer: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'gray',
+    borderRadius: 20,
+  },
   postButton: {
     color: 'white',
     fontSize: 16,
-    marginLeft: 10,
+    marginRight: 7,
+    marginTop: 10,
   },
   postsContainer: {
     flex: 1,
@@ -117,6 +296,26 @@ const styles = StyleSheet.create({
     height: 20,
     resizeMode: 'cover',
     borderRadius: 10,
+  },
+  cameraStyles: {
+    marginRight: 10,
+    marginTop: 8,
+    height: 25,
+    width: 25,
+  },
+  userName: {
+    fontWeight: '800',
+    fontFamily: 'AntonSC-regular',
+    marginLeft: 10,
+  },
+  user: {
+    flexDirection: 'row',
+    width: '80%',
+  },
+  image: {
+    height: 70,
+    width: '100%',
+    borderRadius: 21,
   },
 });
 

@@ -8,11 +8,11 @@ import {
   ActivityIndicator,
   FlatList,
   ScrollView,
+  ImageBackground,
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
 
 import SplashScreen from 'react-native-splash-screen';
-
 import BackgroundService from 'react-native-background-actions';
 import profile from '../assets/images/profile.png';
 import homeimage from '../assets/images/homeimage.jpg';
@@ -59,38 +59,34 @@ const HomeScreen = ({navigation}) => {
     setTimeout(() => {
       SplashScreen.hide();
     }, 3000);
+
+    getData();
+
     return () => {
       // Clean up background service if necessary
       BackgroundService.stop();
     };
   }, [search]);
-  const getData = async () => {
-    if (BackgroundService.isRunning) {
-      console.log('Background task started');
-      try {
-        const response = await fetch(
-          'https://api.jikan.moe/v4/anime?q=${search}&limit=20',
-        );
-        if (!response.ok) {
-          throw new Error('Failed to fetch data');
-        }
-        const data = await response.json();
-        setAnimeData(data.data);
-        console.log(data);
-        setIsLoading(false);
-        return data;
-      } catch (error) {
-        console.error('Background task error:', error);
-        throw error; // Ensure the error is propagated back
-      }
-    }
-  };
 
-  const toggleExpand = index => {
-    setExpanded(prevExpanded => ({
-      ...prevExpanded,
-      [index]: !prevExpanded[index],
-    }));
+  const getData = async () => {
+    setIsLoading(true);
+    try {
+      const url = search
+        ? `https://api.jikan.moe/v4/anime?q=${search}&limit=20`
+        : 'https://api.jikan.moe/v4/top/anime';
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Failed to fetch data:${response.status}');
+      }
+      const data = await response.json();
+      setAnimeData(data.data);
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error fetching anime data:', error);
+      setError('Failed to fetch anime data');
+      setIsLoading(false);
+    }
   };
 
   const renderContent = () => {
@@ -103,35 +99,25 @@ const HomeScreen = ({navigation}) => {
     if (animeData) {
       return (
         <View style={styles.animeContainer}>
-          <Text style={styles.text}>Trending Anime</Text>
+          <Text style={styles.text}>Top Anime</Text>
           <ScrollView horizontal>
             <View style={styles.anime}>
               {animeData.map((anime, index) => (
-                <LinearGradient
+                <TouchableOpacity
                   key={index}
-                  colors={['#2e32a3', '#bb94d4', '#d494ca']}
-                  style={[
-                    styles.animeBlock,
-                    expanded[index] ? {height: 350} : {height: 300},
-                  ]}>
-                  <Image
-                    source={{uri: anime.images.jpg.large_image_url}}
-                    style={styles.animeImage}
-                  />
-                  <Text style={styles.animeTitle}>{anime.title}</Text>
-                  <Text style={styles.animeDescription}>
-                    {expanded[index] || anime.synopsis.length <= 20
-                      ? anime.synopsis
-                      : `${anime.synopsis.substring(0, 80)}...`}
-                  </Text>
-                  {anime.synopsis.length > 20 && (
-                    <TouchableOpacity onPress={() => toggleExpand(index)}>
-                      <Text style={styles.showMore}>
-                        {expanded[index] ? 'Show Less' : 'Show More'}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                </LinearGradient>
+                  style={styles.item}
+                  onPress={() => navigation.navigate('AnimeScreen', {anime})}>
+                  <LinearGradient
+                    key={index}
+                    colors={['#2e32a3', '#bb94d4', '#d494ca']}
+                    style={[styles.animeBlock]}>
+                    <Image
+                      source={{uri: anime.images.jpg.large_image_url}}
+                      style={styles.animeImage}
+                    />
+                    <Text style={styles.animeTitle}>{anime.title}</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
               ))}
             </View>
           </ScrollView>
@@ -143,28 +129,37 @@ const HomeScreen = ({navigation}) => {
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.text}>Strawhat</Text>
-        <TouchableOpacity
-          onPress={() => {
-            navigation.navigate('Profile');
-          }}
-          style={styles.imagecontainer}>
-          <Image source={profile} style={styles.image}></Image>
-        </TouchableOpacity>
-      </View>
-      <View style={styles.middle}>
-        <Text style={styles.textmiddle}>Welcome Friend !</Text>
-        <View style={styles.searchContainer}>
-          <TextInput
-            cursorColor={'red'}
-            inputMode="search"
-            placeholder="Search your fav anime"
-            onChange={e => setSearch(e.target.value)}></TextInput>
+      <ImageBackground
+        source={require('../assets/images/profileBg.png')} // Replace with your background image path
+        style={styles.backgroundImage}
+        resizeMode="cover">
+        <View style={styles.header}>
+          <Text style={styles.text}>Strawhat</Text>
+          <TouchableOpacity
+            onPress={() => {
+              navigation.navigate('Profile');
+            }}
+            style={styles.imagecontainer}>
+            <Image source={profile} style={styles.image}></Image>
+          </TouchableOpacity>
         </View>
-        <Image source={homeimage} style={styles.homeimage}></Image>
-      </View>
-      {renderContent()}
+        <View style={styles.middle}>
+          <Text style={styles.textmiddle}>Welcome Friend !</Text>
+          <View style={styles.searchContainer}>
+            <TextInput
+              cursorColor={'purple'}
+              inputMode="search"
+              placeholder="Search your fav anime"
+              value={search}
+              onChangeText={text => setSearch(text)}></TextInput>
+            <TouchableOpacity onPress={getData}>
+              <Text>Search</Text>
+            </TouchableOpacity>
+          </View>
+          <Image source={homeimage} style={styles.homeimage}></Image>
+        </View>
+        {renderContent()}
+      </ImageBackground>
     </ScrollView>
   );
 };
@@ -205,9 +200,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 10,
     justifyContent: 'center',
+    flexDirection: 'row',
+    borderRadius: 10,
   },
   middle: {
-    backgroundColor: '#000',
     height: '40%',
     width: '90%',
     margin: 20,
@@ -225,13 +221,14 @@ const styles = StyleSheet.create({
   },
   animeContainer: {
     flex: 1,
-    backgroundColor: 'black',
+
     marginBottom: 150,
   },
   anime: {
     flexDirection: 'row',
   },
   animeBlock: {
+    height: 200,
     width: 200,
     margin: 20,
     alignItems: 'center',

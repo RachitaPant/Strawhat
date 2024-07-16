@@ -9,6 +9,7 @@ import LoginScreen from './screens/LoginScreen';
 import SignUp from './screens/SignUp';
 import auth from '@react-native-firebase/auth'; // Import the initialized auth from firebase.js
 import HomeScreen from './screens/HomeScreen';
+import AnimeScreen from './screens/AnimeScreen';
 
 const homeName = 'Home';
 const profileName = 'Profile';
@@ -21,6 +22,7 @@ const HomeStack = () => {
     <Stack.Navigator screenOptions={{headerShown: false}}>
       <Stack.Screen component={HomeScreen} name="HomeScreen"></Stack.Screen>
       <Stack.Screen component={Profile} name="Profile"></Stack.Screen>
+      <Stack.Screen name="AnimeScreen" component={AnimeScreen} />
     </Stack.Navigator>
   );
 };

@@ -9,37 +9,61 @@ import {
 import React, {useEffect, useState} from 'react';
 import auth from '@react-native-firebase/auth';
 import SplashScreen from 'react-native-splash-screen';
+import firestore from '@react-native-firebase/firestore';
 
 const SignUp = ({navigation}) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
   useEffect(() => {
     setTimeout(() => {
       SplashScreen.hide();
     }, 3000);
   }, []);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const onRegister = async () => {
+    if (!email || !password || !username) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
 
-  const onRegister = () => {
-    auth()
-      .createUserWithEmailAndPassword(email, password)
-      .then(() => {
-        Alert.alert('User account created!');
-        navigation.navigate('LoginScreen');
-      })
-      .catch(error => {
-        if (error.code === 'auth/email-already-in-use') {
-          Alert.alert('That email address is already in use!');
-        }
-        if (error.code === 'auth/invalid-email') {
-          Alert.alert('That email address is invalid!');
-        }
-        // Alert.alert(`${error}`);
+    try {
+      const userCredential = await auth().createUserWithEmailAndPassword(
+        email,
+        password,
+      );
+
+      const user = userCredential.user;
+      await user.updateProfile({
+        displayName: username,
       });
+      await firestore().collection('users').doc(user.uid).set({
+        username: username,
+        email: email,
+        createdAt: firestore.FieldValue.serverTimestamp(),
+      });
+
+      Alert.alert('User account created!');
+      navigation.navigate('LoginScreen');
+    } catch (error) {
+      if (error.code === 'auth/email-already-in-use') {
+        Alert.alert('That email address is already in use!');
+      } else if (error.code === 'auth/invalid-email') {
+        Alert.alert('That email address is invalid!');
+      } else {
+        Alert.alert('Error', error.message);
+      }
+    }
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.signup}>Sign Up Screen</Text>
+      <TextInput
+        style={styles.inputBox}
+        placeholder="Username"
+        value={username}
+        onChangeText={setUsername}
+      />
       <TextInput
         placeholder="Email"
         style={styles.inputBox}
