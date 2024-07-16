@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   View,
   Text,
@@ -60,8 +61,6 @@ const HomeScreen = ({navigation}) => {
       SplashScreen.hide();
     }, 3000);
 
-    getData();
-
     return () => {
       // Clean up background service if necessary
       BackgroundService.stop();
@@ -88,7 +87,9 @@ const HomeScreen = ({navigation}) => {
       setIsLoading(false);
     }
   };
-
+  const handleSearch = () => {
+    getData();
+  };
   const renderContent = () => {
     if (isLoading) {
       return <ActivityIndicator size="large" color="#fff" />;
@@ -140,7 +141,7 @@ const HomeScreen = ({navigation}) => {
               navigation.navigate('Profile');
             }}
             style={styles.imagecontainer}>
-            <Image source={profile} style={styles.image}></Image>
+            <Image source={profile} style={styles.image} />
           </TouchableOpacity>
         </View>
         <View style={styles.middle}>
@@ -151,15 +152,16 @@ const HomeScreen = ({navigation}) => {
               inputMode="search"
               placeholder="Search your fav anime"
               value={search}
-              onChangeText={text => setSearch(text)}></TextInput>
-            <TouchableOpacity onPress={getData} style={styles.searchBtn}>
+              onChangeText={text => setSearch(text)}
+            />
+            <TouchableOpacity onPress={handleSearch} style={styles.searchBtn}>
               <Text style={styles.searchBtnText}>Search</Text>
             </TouchableOpacity>
           </View>
         </View>
         {renderContent()}
         <View>
-          <Image source={homeimage} style={styles.homeimage}></Image>
+          <Image source={homeimage} style={styles.homeimage} />
         </View>
       </ImageBackground>
     </ScrollView>
