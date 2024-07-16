@@ -77,14 +77,14 @@ const HomeScreen = ({navigation}) => {
 
       const response = await fetch(url);
       if (!response.ok) {
-        throw new Error('Failed to fetch data:${response.status}');
+        throw new Error(`Failed to fetch data: ${response.status}`);
       }
       const data = await response.json();
       setAnimeData(data.data);
-      setIsLoading(false);
     } catch (error) {
       console.error('Error fetching anime data:', error);
       setError('Failed to fetch anime data');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -152,13 +152,15 @@ const HomeScreen = ({navigation}) => {
               placeholder="Search your fav anime"
               value={search}
               onChangeText={text => setSearch(text)}></TextInput>
-            <TouchableOpacity onPress={getData}>
-              <Text>Search</Text>
+            <TouchableOpacity onPress={getData} style={styles.searchBtn}>
+              <Text style={styles.searchBtnText}>Search</Text>
             </TouchableOpacity>
           </View>
-          <Image source={homeimage} style={styles.homeimage}></Image>
         </View>
         {renderContent()}
+        <View>
+          <Image source={homeimage} style={styles.homeimage}></Image>
+        </View>
       </ImageBackground>
     </ScrollView>
   );
@@ -203,8 +205,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     borderRadius: 10,
   },
+  searchBtn: {
+    backgroundColor: '#ffffff',
+    width: 80,
+    marginLeft: 195,
+    borderRadius: 10,
+  },
+  searchBtnText: {
+    color: '#000000',
+    alignSelf: 'center',
+    margin: 10,
+  },
   middle: {
-    height: '40%',
+    height: '5%',
     width: '90%',
     margin: 20,
   },
@@ -216,13 +229,13 @@ const styles = StyleSheet.create({
     height: 250,
     width: '60%',
     alignSelf: 'center',
-    margin: 10,
-    borderRadius: 120,
+    margin: 5,
+    borderRadius: 100,
   },
   animeContainer: {
     flex: 1,
 
-    marginBottom: 150,
+    marginBottom: 10,
   },
   anime: {
     flexDirection: 'row',

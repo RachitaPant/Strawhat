@@ -124,6 +124,7 @@ const Profile = () => {
           }}>
           <Text style={styles.btnText}>Log Out</Text>
         </TouchableOpacity>
+        <Text style={styles.leaving}>Leaving ? Will see you soon !</Text>
       </View>
     </ImageBackground>
   );
@@ -180,4 +181,8 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   labelText: {marginLeft: 45, marginBottom: 8, color: '#fff'},
+  leaving: {
+    alignSelf: 'center',
+    padding: 10,
+  },
 });

@@ -26,6 +26,7 @@ const Community = () => {
   const [uploading, setUploading] = useState(false);
   const [transferred, setTransferred] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   //Gallery action
   const openGallery = async () => {
@@ -53,65 +54,97 @@ const Community = () => {
     }
   };
   //Showing existing posts
+  // useEffect(() => {
+  //   const fetchPosts = async () => {
+  //     try {
+  //       const postsSnapshot = await firestore()
+  //         .collection('posts')
+  //         .orderBy('createdAt', 'desc')
+  //         .get();
+
+  //       const postsData = [];
+  //       for (const doc of postsSnapshot.docs) {
+  //         const postData = doc.data();
+  //         const userSnapshot = await firestore()
+  //           .collection('users')
+  //           .doc(postData.userId)
+  //           .get();
+  //         const userData = userSnapshot.data();
+  //         postsData.push({
+  //           id: doc.id,
+  //           ...postData,
+  //           username: userData.username,
+  //         });
+  //       }
+
+  //       setPosts(postsData);
+  //       setLoading(false);
+  //     } catch (error) {
+  //       console.error('Error fetching posts:', error);
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   const unsubscribe = firestore()
+  //     .collection('posts')
+  //     .orderBy('createdAt', 'desc')
+  //     .onSnapshot(snapshot => {
+  //       // Handle real-time updates for new, modified, and removed posts
+  //       snapshot.docChanges().forEach(change => {
+  //         const post = {
+  //           id: change.doc.id,
+  //           ...change.doc.data(),
+  //         };
+
+  //         switch (change.type) {
+  //           case 'added':
+  //             setPosts(prevPosts => [post, ...prevPosts]); // Add new post
+  //             break;
+  //           case 'modified':
+  //             // Handle modified post if needed
+  //             break;
+  //           case 'removed':
+  //             setPosts(prevPosts => prevPosts.filter(p => p.id !== post.id)); // Remove post from state
+  //             break;
+  //           default:
+  //             break;
+  //         }
+  //       });
+  //     });
+
+  //   fetchPosts();
+  //   return () => unsubscribe();
+  // }, []);
   useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const postsSnapshot = await firestore()
-          .collection('posts')
-          .orderBy('createdAt', 'desc')
-          .get();
-
-        const postsData = [];
-        for (const doc of postsSnapshot.docs) {
-          const postData = doc.data();
-          const userSnapshot = await firestore()
-            .collection('users')
-            .doc(postData.userId)
-            .get();
-          const userData = userSnapshot.data();
-          postsData.push({
-            id: doc.id,
-            ...postData,
-            username: userData.username,
-          });
-        }
-
-        setPosts(postsData);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching posts:', error);
-        setLoading(false);
-      }
-    };
-
     const unsubscribe = firestore()
       .collection('posts')
       .orderBy('createdAt', 'desc')
       .onSnapshot(snapshot => {
-        // Handle real-time updates for new, modified, and removed posts
-        snapshot.docChanges().forEach(change => {
-          const post = {
-            id: change.doc.id,
-            ...change.doc.data(),
-          };
-
-          switch (change.type) {
-            case 'added':
-              setPosts(prevPosts => [post, ...prevPosts]); // Add new post
-              break;
-            case 'modified':
-              // Handle modified post if needed
-              break;
-            case 'removed':
-              setPosts(prevPosts => prevPosts.filter(p => p.id !== post.id)); // Remove post from state
-              break;
-            default:
-              break;
-          }
+        const postsData = [];
+        snapshot.forEach(doc => {
+          const postData = doc.data();
+          postsData.push({
+            id: doc.id,
+            ...postData,
+          });
         });
+
+        const fetchUsernames = async () => {
+          for (const post of postsData) {
+            const userSnapshot = await firestore()
+              .collection('users')
+              .doc(post.userId)
+              .get();
+            const userData = userSnapshot.data();
+            post.username = userData.username || 'Anonymous';
+          }
+          setPosts(postsData);
+          setLoading(false);
+        };
+
+        fetchUsernames();
       });
 
-    fetchPosts();
     return () => unsubscribe();
   }, []);
   //Getting new posts
@@ -132,9 +165,11 @@ const Community = () => {
 
     const task = storage().ref(filename).putFile(uploadUri);
     task.on('state_changed', snapshot => {
-      setTransferred(
-        Math.round(snapshot.bytesTransferred / snapshot.totalBytes) * 100,
+      const progress = Math.round(
+        (snapshot.bytesTransferred / snapshot.totalBytes) * 100,
       );
+      setTransferred(progress);
+      setUploadProgress(progress);
     });
 
     try {
@@ -182,68 +217,70 @@ const Community = () => {
       console.error('Error adding post: ', error);
     }
   };
+  const renderHeader = () => (
+    <View style={styles.postContainer}>
+      {imageUri && <Image source={{uri: imageUri}} style={styles.image} />}
+      {uploading && (
+        <Text
+          style={
+            styles.uploadProgress
+          }>{`Upload Progress: ${uploadProgress}%`}</Text>
+      )}
+      <View style={styles.postInputContainer}>
+        <TextInput
+          style={styles.postInput}
+          placeholder="Post Here"
+          onChangeText={text => setText(text)}
+          value={text}
+          multiline
+        />
+        <TouchableOpacity onPress={openGallery}>
+          <Image source={camera} style={styles.cameraStyles} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={submitPost}>
+          <Text style={styles.postButton}>Post</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
   if (loading) {
     return <ActivityIndicator size="large" color="#0000ff" />;
   }
   return (
-    <ScrollView style={styles.container}>
-      <ImageBackground
-        source={require('../assets/images/profileBg.png')}
-        style={styles.backgroundImage}
-        resizeMode="cover">
-        <View style={styles.postContainer}>
-          {imageUri && <Image source={{uri: imageUri}} style={styles.image} />}
-          <View style={styles.postInputContainer}>
-            <TextInput
-              style={styles.postInput}
-              placeholder="Post Here"
-              onChangeText={text => setText(text)}
-              value={text}
-              multiline
-            />
-            <TouchableOpacity
-              onPress={() => {
-                openGallery();
-              }}>
-              <Image source={camera} style={styles.cameraStyles}></Image>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => {
-                submitPost();
-              }}>
-              <Text style={styles.postButton} o>
-                Post
-              </Text>
-            </TouchableOpacity>
+    <ImageBackground
+      source={require('../assets/images/profileBg.png')}
+      style={styles.backgroundImage}
+      resizeMode="cover">
+      <FlatList
+        data={posts}
+        keyExtractor={item => item.id}
+        renderItem={({item}) => (
+          <View style={styles.postShow}>
+            <Text style={styles.userName}>
+              CrewMate : {item.username} posted
+            </Text>
+            <Text style={styles.postText}>{item.text}</Text>
+            {item.imageUrl ? (
+              <Image source={{uri: item.imageUrl}} style={styles.postImage} />
+            ) : null}
           </View>
-        </View>
-
-        <View style={styles.postsContainer}>
-          <FlatList
-            data={posts}
-            keyExtractor={item => item.id}
-            renderItem={({item}) => (
-              <View style={styles.postContainer}>
-                <Text style={styles.userName}>{item.username}</Text>
-                <Text style={styles.postText}>{item.text}</Text>
-                {item.imageUrl ? (
-                  <Image
-                    source={{uri: item.imageUrl}}
-                    style={styles.postImage}
-                  />
-                ) : null}
-              </View>
-            )}
-          />
-        </View>
-      </ImageBackground>
-    </ScrollView>
+        )}
+        ListHeaderComponent={renderHeader}
+        contentContainerStyle={{paddingBottom: 80}}
+        style={{flex: 1}}
+      />
+    </ImageBackground>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  uploadProgress: {
+    color: 'white',
+    fontSize: 16,
+    marginTop: 10,
   },
   backgroundImage: {
     flex: 1,
@@ -266,6 +303,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'gray',
     borderRadius: 20,
+    margin: 10,
+    backgroundColor: '#000000',
   },
   postButton: {
     color: 'white',
@@ -273,9 +312,12 @@ const styles = StyleSheet.create({
     marginRight: 7,
     marginTop: 10,
   },
-  postsContainer: {
-    flex: 1,
+  postShow: {
+    backgroundColor: '#fff',
     padding: 10,
+    marginVertical: 8,
+    borderRadius: 10,
+    marginHorizontal: 10,
   },
   post: {
     marginBottom: 10,
@@ -285,9 +327,10 @@ const styles = StyleSheet.create({
   },
   postImage: {
     marginTop: 10,
-    width: '100%',
+
     height: 200,
-    resizeMode: 'cover',
+    padding: 50,
+
     borderRadius: 8,
   },
   profileImage: {
@@ -307,6 +350,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     fontFamily: 'AntonSC-regular',
     marginLeft: 10,
+    color: '#000000',
   },
   user: {
     flexDirection: 'row',
@@ -316,6 +360,10 @@ const styles = StyleSheet.create({
     height: 70,
     width: '100%',
     borderRadius: 21,
+  },
+  postText: {
+    padding: 10,
+    color: '#000000',
   },
 });
 
