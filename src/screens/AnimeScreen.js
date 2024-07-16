@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 // screens/AnimeDetailScreen.js
 
 import React from 'react';
@@ -30,10 +31,10 @@ const AnimeDetailScreen = ({route}) => {
               <Text style={styles.tagText}>{anime.status}</Text>
             </View>
             <View style={styles.tag}>
-              <Text style={styles.tagText}>{anime.status}</Text>
+              <Text style={styles.tagText}>{anime.rating}</Text>
             </View>
             <View style={styles.tag}>
-              <Text style={styles.tagText}>{anime.status}</Text>
+              <Text style={styles.tagText}>{anime.year}</Text>
             </View>
           </View>
 

@@ -100,7 +100,7 @@ const HomeScreen = ({navigation}) => {
     if (animeData) {
       return (
         <View style={styles.animeContainer}>
-          <Text style={styles.text}>Top Anime</Text>
+          <Text style={styles.text}>{search ? search : 'Top Anime'}</Text>
           <ScrollView horizontal>
             <View style={styles.anime}>
               {animeData.map((anime, index) => (

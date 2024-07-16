@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   View,
   Text,
@@ -13,7 +14,9 @@ import storage from '@react-native-firebase/storage';
 import {launchImageLibrary} from 'react-native-image-picker';
 import firestore from '@react-native-firebase/firestore';
 const Profile = () => {
-  const [profileImage, setProfileImage] = useState(null);
+  const [profileImage, setProfileImage] = useState(
+    userData?.profileImage || null,
+  );
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
@@ -26,7 +29,11 @@ const Profile = () => {
             .doc(currentUser.uid)
             .get();
           if (userDoc.exists) {
-            setUserData(userDoc.data());
+            const userData = userDoc.data();
+            setUserData(userData);
+            if (userData.profileImage) {
+              setProfileImage(userData.profileImage);
+            }
           } else {
             console.error('User document not found.');
           }
