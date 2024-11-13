@@ -2,6 +2,11 @@
 Anime Community App
 Overview
 This is a mobile application for anime enthusiasts to share posts with text and images in a community-driven platform. Also It contains data about the top animes .
+# My Project
+
+Here is a demo video of the project:
+
+[![Watch the video](https://img.youtube.com/vi/lbKbCvwhnlQ/maxresdefault.jpg)](https://youtu.be/lbKbCvwhnlQ)
 
 Features
 ### Authentication: Users can sign up and log in to the app.
