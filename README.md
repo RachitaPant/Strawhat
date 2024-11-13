@@ -7,8 +7,26 @@ This is a mobile application for anime enthusiasts to share posts with text and 
 Here is a demo video of the project:
 
 [![Watch the video](https://img.youtube.com/vi/lbKbCvwhnlQ/maxresdefault.jpg)](https://youtu.be/lbKbCvwhnlQ)
+### Screenshot of the App:
+<div style="display: flex;">
+<img src="https://github.com/RachitaPant/Strawhat/raw/main/str5.png" width="300" />
+<img src="https://github.com/RachitaPant/Strawhat/raw/main/str2.png" width="300" />
+<img src="https://github.com/RachitaPant/Strawhat/raw/main/str3.png" width="300" />
+<img src="https://github.com/RachitaPant/Strawhat/raw/main/str4.png" width="300" />
+</div>
+<div style="display: flex;">
+<img src="https://github.com/RachitaPant/Strawhat/raw/main/str6.png" width="300" />
+<img src="https://github.com/RachitaPant/Strawhat/raw/main/str7.png" width="300" />
+<img src="https://github.com/RachitaPant/Strawhat/raw/main/str8.png" width="300" />
+<img src="https://github.com/RachitaPant/Strawhat/raw/main/str9.png" width="300" />
+  </div>
+  <div style="display: flex;">
+<img src="https://github.com/RachitaPant/Strawhat/raw/main/str10.png" width="300" />
+<img src="https://github.com/RachitaPant/Strawhat/raw/main/str11.png" width="300" />
+<img src="https://github.com/RachitaPant/Strawhat/raw/main/str1.png" width="300" />
+  </div>
 
-Features
+# Features
 ### Authentication: Users can sign up and log in to the app.
 ### Post Creation: Users can create posts with text and images.
 ### Real-time Updates: Posts are updated in real-time using Firestore.
