@@ -39,19 +39,19 @@ Here is a demo video of the project:
 # Installation
 To run the project locally, follow these steps:
 
-### Clone the repository: git clone https://github.com/your/repository.git
+### Clone the repository: git clone https://github.com/RachitaPant/Strawhat.git
 ### avigate to the project directory: cd anime-community-app
 ### Install dependencies: npm install
 # Set up Firebase:
 Create a Firebase project and add your configuration details to firebaseConfig.js.
 Enable Firestore and Storage services.
 # Run the app:
-For Android: npx react-native run-android
-Screenshots to be added soon .
+For Android: 
+```npx react-native run-android```
 
 
-Contributing
+# Contributing
 Contributions are welcome! If you'd like to contribute to this project, please fork the repository and create a pull request.
 
-License
+# License
 This project is licensed under the MIT License.
