@@ -12,9 +12,7 @@ Strawhat is a community-driven anime platform where users can:
 ### ✅ Engage in discussions with fellow anime fans 🗣️
 ### ✅ Personalize their profiles 🎨
 Large Anime Library to learn from using Jikan API
- <div>
-    <img src="https://media.tenor.com/Oza7xqkFY2gAAAAj/buggy-buggy-dancing.gif" alt="One Piece Luffy" style="width: 100px; height: auto;">
-  </div>
+
 
 # 🎥 Demo Video
 
@@ -105,9 +103,7 @@ Follow these steps to set up Strawhat locally:
 ### 🛠️ Make your changes
 ### 📩 Submit a pull request
 
- <div>
-    <img src="https://media.tenor.com/yQpfFS04RHgAAAAj/luffy-bounce.gif" alt="One Piece Luffy" style="width: 100px; height: auto;">
-  </div>
+
 
 
 # 📜 License
